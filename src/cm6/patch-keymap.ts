@@ -8,9 +8,9 @@ import type {
 import { EditorSelection, findClusterBreak } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 
-import type CMChsPatch from "../chsp-main";
+import type { Segmentation } from "../segmentation";
 
-export const patchKeymap = (plugin: CMChsPatch) => {
+export const patchKeymap = (segmentation: Segmentation) => {
   // based on https://github.com/codemirror/commands/releases/tag/6.1.1
 
   function deleteBy(target: CommandTarget, by: (start: number) => number) {
@@ -88,7 +88,7 @@ export const patchKeymap = (plugin: CMChsPatch) => {
       }
       // #region modified
       pos =
-        plugin.getSegDestFromGroup(start, pos, state.sliceDoc.bind(state)) ??
+        segmentation.getSegDestFromGroup(start, pos, state.sliceDoc.bind(state)) ??
         pos;
       // #endregion
       return pos;

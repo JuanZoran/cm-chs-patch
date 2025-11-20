@@ -1,8 +1,8 @@
-import type CMChsPatch from "../chsp-main";
+import type { Segmentation } from "../segmentation";
 import { dblClickPatch } from "./dbl-click";
 import { patchKeymap } from "./patch-keymap";
 
-export const getChsPatchExtension = (plugin: CMChsPatch) => [
-  dblClickPatch(plugin),
-  patchKeymap(plugin),
+export const getChsPatchExtension = (segmentation: Segmentation) => [
+  dblClickPatch(segmentation),
+  patchKeymap(segmentation),
 ];

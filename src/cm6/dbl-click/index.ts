@@ -4,18 +4,15 @@ import type { SelectionRange } from "@codemirror/state";
 import type { MouseSelectionStyle } from "@codemirror/view";
 import { EditorView } from "@codemirror/view";
 
-import type CMChsPatch from "../../chsp-main";
+import type { Segmentation } from "../../segmentation";
 import cm6GetChsSeg from "../get-seg";
-export const dblClickPatch = (plugin: CMChsPatch) => {
+export const dblClickPatch = (segmentation: Segmentation) => {
   const rangeForPos = (
     view: EditorView,
     pos: number,
   ): SelectionRange => {
-    const baseRange =
-      view.state.wordAt(pos) ?? EditorSelection.range(pos, pos);
-    return (
-      cm6GetChsSeg(plugin, pos, baseRange, view.state) ?? baseRange
-    );
+    const baseRange = view.state.wordAt(pos) ?? EditorSelection.range(pos, pos);
+    return cm6GetChsSeg(segmentation, pos, baseRange, view.state) ?? baseRange;
   };
   const dblClickPatch = EditorView.mouseSelectionStyle.of((view, event) => {
     // Only handle double clicks

@@ -3,13 +3,12 @@ import { Plugin } from "obsidian";
 import setupCM6 from "./cm6";
 import GoToDownloadModal from "./install-guide";
 import { cut, cutForSearch, initJieba } from "./jieba";
+import { createSegmentation, type Segmentation } from "./segmentation";
 import { ChsPatchSettingTab, DEFAULT_SETTINGS } from "./settings";
-import { chsPatternGlobal, isChs } from "./utils.js";
-
-const CHS_RANGE_LIMIT = 10;
 
 export default class CMChsPatch extends Plugin {
   libName = "jieba_rs_wasm_bg.wasm";
+  segmentation!: Segmentation;
   async loadLib(): Promise<ArrayBuffer | null> {
     if (!(await app.vault.adapter.exists(this.libPath, true))) {
       return null;
@@ -33,7 +32,10 @@ export default class CMChsPatch extends Plugin {
     await this.loadSettings();
 
     if (await this.loadSegmenter()) {
-      setupCM6(this);
+      this.segmentation = createSegmentation({
+        cut: this.cut.bind(this),
+      });
+      setupCM6(this, this.segmentation);
       console.info("editor word splitting patched");
     }
   }
@@ -78,94 +80,4 @@ export default class CMChsPatch extends Plugin {
     }
     return cut(text, this.settings.hmm);
   }
-
-  getSegRangeFromCursor(
-    cursor: number,
-    { from, to, text }: { from: number; to: number; text: string },
-  ) {
-    if (!isChs(text)) {
-      // 匹配中文字符
-      return null;
-    } else {
-      // trim long text
-      if (cursor - from > CHS_RANGE_LIMIT) {
-        const newFrom = cursor - CHS_RANGE_LIMIT;
-        if (isChs(text.slice(newFrom, cursor))) {
-          // 英文单词超过 RANGE_LIMIT 被截断，不执行截断优化策略
-          text = text.slice(newFrom - from);
-          from = newFrom;
-        }
-      }
-      if (to - cursor > CHS_RANGE_LIMIT) {
-        const newTo = cursor + CHS_RANGE_LIMIT;
-        if (isChs(text.slice(cursor, newTo))) {
-          // 英文单词超过 RANGE_LIMIT 被截断，不执行截断优化策略
-          text = text.slice(0, newTo - to);
-          to = newTo;
-        }
-      }
-      const segResult = this.cut(text);
-
-      if (cursor === to) {
-        const lastSeg = segResult.last()!;
-        return { from: to - lastSeg.length, to };
-      }
-
-      let chunkStart = 0,
-        chunkEnd = 0;
-      const relativePos = cursor - from;
-
-      for (const seg of segResult) {
-        chunkEnd = chunkStart + seg.length;
-        if (relativePos >= chunkStart && relativePos < chunkEnd) {
-          break;
-        }
-        chunkStart += seg.length;
-      }
-      to = chunkEnd + from;
-      from += chunkStart;
-      return { from, to };
-    }
-  }
-
-  getSegDestFromGroup(
-    startPos: number,
-    nextPos: number,
-    sliceDoc: (from: number, to: number) => string,
-  ): number | null {
-    const forward = startPos < nextPos;
-    const text = limitChsChars(
-      forward ? sliceDoc(startPos, nextPos) : sliceDoc(nextPos, startPos),
-      forward,
-    );
-    const segResult = this.cut(text);
-    if (segResult.length === 0) return null;
-
-    let length = 0;
-    let seg: string;
-    do {
-      seg = forward ? segResult.shift()! : segResult.pop()!;
-      length += seg.length;
-    } while (/\s+/.test(seg));
-
-    return forward ? startPos + length : startPos - length;
-  }
-}
-
-function limitChsChars(input: string, forward: boolean) {
-  if (!forward) {
-    input = [...input].reverse().join("");
-  }
-  let endingIndex = input.length - 1;
-  let chsCount = 0;
-  for (const { index } of input.matchAll(chsPatternGlobal)) {
-    chsCount++;
-    endingIndex = index;
-    if (chsCount > CHS_RANGE_LIMIT) break;
-  }
-  const output = input.slice(0, endingIndex + 1);
-  if (!forward) {
-    return [...output].reverse().join("");
-  }
-  return output;
 }
