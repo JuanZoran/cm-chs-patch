@@ -6,6 +6,11 @@ package-lock.json
 # build
 build
 
+# local artifacts
+main.js
+data.json
+
+
 # https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
 .pnp.*
 .yarn/*
