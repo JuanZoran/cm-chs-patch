@@ -3,13 +3,14 @@ import type { SelectionRange } from "@codemirror/state";
 import { EditorSelection, EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { around } from "monkey-around";
+import type { Plugin } from "obsidian";
 
-import type CMChsPatch from "../chsp-main";
 import { getChsPatchExtension } from "./chs-extension";
+import type { Segmentation } from "../segmentation";
 import cm6GetChsSeg from "./get-seg";
 
-const setupCM6 = (plugin: CMChsPatch) => {
-  plugin.registerEditorExtension(getChsPatchExtension(plugin));
+const setupCM6 = (plugin: Plugin, segmentation: Segmentation) => {
+  plugin.registerEditorExtension(getChsPatchExtension(segmentation));
   // wordAt monkey patch
   plugin.register(
     around(EditorState.prototype, {
@@ -17,7 +18,8 @@ const setupCM6 = (plugin: CMChsPatch) => {
         function (this: EditorState, pos: number) {
           const srcRange = next.call(this, pos);
           return (
-            cm6GetChsSeg(plugin, pos, next.call(this, pos), this) ?? srcRange
+            cm6GetChsSeg(segmentation, pos, next.call(this, pos), this) ??
+            srcRange
           );
         },
     }),
@@ -90,7 +92,7 @@ const setupCM6 = (plugin: CMChsPatch) => {
                 break;
             }
 
-            const destPos = plugin.getSegDestFromGroup(
+            const destPos = segmentation.getSegDestFromGroup(
               startPos,
               forward ? dest.from : dest.to,
               this.state.sliceDoc.bind(this.state),
