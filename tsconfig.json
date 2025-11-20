@@ -2,7 +2,7 @@
   "compilerOptions": {
     "lib": ["esnext", "dom", "ES2022.Intl"],
     "moduleResolution": "Node16",
-    "module": "CommonJS",
+    "module": "Node16",
     "target": "ES2020",
     "esModuleInterop": true,
     "incremental": false
