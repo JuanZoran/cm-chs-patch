@@ -1,6 +1,5 @@
-import { Platform, Plugin } from "obsidian";
+import { Plugin } from "obsidian";
 
-import { VimPatcher } from "./chsp-vim.js";
 import setupCM6 from "./cm6";
 import GoToDownloadModal from "./install-guide";
 import { cut, cutForSearch, initJieba } from "./jieba";
@@ -9,72 +8,23 @@ import { chsPatternGlobal, isChs } from "./utils.js";
 
 const CHS_RANGE_LIMIT = 10;
 
-const userDataDir = Platform.isDesktopApp
-  ? // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require("@electron/remote").app.getPath("userData")
-  : null;
-
 export default class CMChsPatch extends Plugin {
   libName = "jieba_rs_wasm_bg.wasm";
   async loadLib(): Promise<ArrayBuffer | null> {
-    if (userDataDir) {
-      const { readFile } =
-        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/consistent-type-imports
-        require("fs/promises") as typeof import("fs/promises");
-      // read file to arraybuffer in nodejs
-      try {
-        const buf = await readFile(this.libPath);
-        return buf;
-      } catch (e) {
-        if ((e as NodeJS.ErrnoException).code === "ENOENT") {
-          return null;
-        }
-        throw e;
-      }
-    } else {
-      if (!(await app.vault.adapter.exists(this.libPath, true))) {
-        return null;
-      }
-      const buf = await app.vault.adapter.readBinary(this.libPath);
-      return buf;
+    if (!(await app.vault.adapter.exists(this.libPath, true))) {
+      return null;
     }
+    const buf = await app.vault.adapter.readBinary(this.libPath);
+    return buf;
   }
   async libExists(): Promise<boolean> {
-    if (userDataDir) {
-      const { access } =
-        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/consistent-type-imports
-        require("fs/promises") as typeof import("fs/promises");
-      try {
-        await access(this.libPath);
-        return true;
-      } catch (e) {
-        if ((e as NodeJS.ErrnoException).code === "ENOENT") {
-          return false;
-        }
-        throw e;
-      }
-    } else {
-      return await app.vault.adapter.exists(this.libPath, true);
-    }
+    return await app.vault.adapter.exists(this.libPath, true);
   }
   async saveLib(ab: ArrayBuffer): Promise<void> {
-    if (userDataDir) {
-      const { writeFile } =
-        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/consistent-type-imports
-        require("fs/promises") as typeof import("fs/promises");
-      await writeFile(this.libPath, Buffer.from(ab));
-    } else {
-      await app.vault.adapter.writeBinary(this.libPath, ab);
-    }
+    await app.vault.adapter.writeBinary(this.libPath, ab);
   }
   get libPath(): string {
-    if (userDataDir) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/consistent-type-imports
-      const { join } = require("path") as typeof import("path");
-      return join(userDataDir, this.libName);
-    } else {
-      return [app.vault.configDir, this.libName].join("/");
-    }
+    return [app.vault.configDir, this.libName].join("/");
   }
 
   async onload() {
@@ -86,7 +36,6 @@ export default class CMChsPatch extends Plugin {
       setupCM6(this);
       console.info("editor word splitting patched");
     }
-    this.addChild(new VimPatcher(this));
   }
 
   settings = DEFAULT_SETTINGS;

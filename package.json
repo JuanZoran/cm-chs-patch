@@ -28,11 +28,11 @@
     "conventional-changelog-angular": "^5.0.13",
     "cross-env": "^7.0.3",
     "cz-conventional-changelog": "^3.3.0",
-    "esbuild": "^0.15.10",
+    "esbuild": "^0.13.10",
     "eslint": "^8.25.0",
     "jszip": "^3.10.1",
     "obsidian": "0.16.3",
-    "release-it": "^17.0.3",
+    "release-it": "^14.14.3",
     "semver": "^7.3.8",
     "typescript": "^4.9.4"
   },
@@ -43,7 +43,6 @@
   },
   "dependencies": {
     "assert-never": "^1.2.1",
-    "cm6-view-src": "https://github.com/aidenlx/view/tarball/main",
     "file-select-dialog": "^1.5.4",
     "jieba-wasm": "^0.0.2",
     "monkey-around": "^2.3.0"

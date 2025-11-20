@@ -32,19 +32,8 @@ try {
     define: {
       "process.env.NODE_ENV": JSON.stringify(process.env.BUILD),
     },
-    outfile: "build/main.js",
-    plugins: [
-      obPlugin(),
-      {
-        name: "cm6-src",
-        setup: (build) =>
-          build.onResolve({ filter: /^cm6-view-src/ }, (args) => {
-            return {
-              path: resolve(join("node_modules", args.path + ".ts")),
-            };
-          }),
-      },
-    ],
+    outfile: "main.js",
+    plugins: [obPlugin()],
   });
 } catch (err) {
   console.error(err);

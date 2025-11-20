@@ -6,66 +6,73 @@ import { EditorView } from "@codemirror/view";
 
 import type CMChsPatch from "../../chsp-main";
 import cm6GetChsSeg from "../get-seg";
-import { groupAt, queryPos } from "./from-src";
-
 export const dblClickPatch = (plugin: CMChsPatch) => {
-  /** only accept double click */
-  const rangeForClick = (
+  const rangeForPos = (
     view: EditorView,
     pos: number,
-    bias: -1 | 1,
-    type: number,
   ): SelectionRange => {
-    const range = groupAt(view.state, pos, bias);
-    return cm6GetChsSeg(plugin, pos, range, view.state) ?? range;
+    const baseRange =
+      view.state.wordAt(pos) ?? EditorSelection.range(pos, pos);
+    return (
+      cm6GetChsSeg(plugin, pos, baseRange, view.state) ?? baseRange
+    );
   };
   const dblClickPatch = EditorView.mouseSelectionStyle.of((view, event) => {
     // Only handle double clicks
     if (event.button !== 0 || event.detail !== 2) return null;
 
-    // From https://github.com/codemirror/view/blob/0.19.30/src/input.ts#L464-L495
-    const start = queryPos(view, event),
-      type = event.detail; // not targeting ie, no need for polyfill
+    const posAtEvent = (e: MouseEvent): number | null => {
+      const pos = view.posAtCoords(
+        { x: e.clientX, y: e.clientY },
+        false,
+      );
+      return typeof pos === "number" ? pos : pos?.pos ?? null;
+    };
+
+    const startPos = posAtEvent(event);
+    if (startPos == null) return null;
+
+    const startRange = rangeForPos(view, startPos);
     let startSel = view.state.selection;
-    let last = start,
-      lastEvent: MouseEvent | null = event;
+    let lastPos = startPos;
+    let lastEvent: MouseEvent | null = event;
     return {
       update(update) {
         if (update.docChanged) {
-          if (start) start.pos = update.changes.mapPos(start.pos);
+          lastPos = update.changes.mapPos(lastPos);
           startSel = startSel.map(update.changes);
           lastEvent = null;
         }
       },
       get(event, extend, multiple) {
-        let cur;
+        let curPos: number | null;
         if (
           lastEvent &&
           event.clientX == lastEvent.clientX &&
           event.clientY == lastEvent.clientY
-        )
-          cur = last;
-        else {
-          cur = last = queryPos(view, event);
+        ) {
+          curPos = lastPos;
+        } else {
+          curPos = posAtEvent(event);
+          if (curPos == null) return startSel;
+          lastPos = curPos;
           lastEvent = event;
         }
-        if (!cur || !start) return startSel;
-        let range = rangeForClick(view, cur.pos, cur.bias, type);
-        if (start.pos != cur.pos && !extend) {
-          const startRange = rangeForClick(view, start.pos, start.bias, type);
-          const from = Math.min(startRange.from, range.from),
-            to = Math.max(startRange.to, range.to);
-          range =
-            from < range.from
-              ? EditorSelection.range(from, to)
-              : EditorSelection.range(to, from);
+        const range = rangeForPos(view, curPos);
+        if (!extend && startPos !== curPos) {
+          const from = Math.min(startRange.from, range.from);
+          const to = Math.max(startRange.to, range.to);
+          return EditorSelection.create([EditorSelection.range(from, to)]);
         }
-        if (extend)
+        if (extend) {
           return startSel.replaceRange(
             startSel.main.extend(range.from, range.to),
           );
-        else if (multiple) return startSel.addRange(range);
-        else return EditorSelection.create([range]);
+        } else if (multiple) {
+          return startSel.addRange(range);
+        } else {
+          return EditorSelection.create([range]);
+        }
       },
     } as MouseSelectionStyle;
   });

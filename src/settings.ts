@@ -8,16 +8,12 @@ export interface ChsPatchSetting {
   useJieba: boolean;
   hmm: boolean;
   dict: string;
-  moveByChineseWords: boolean;
-  moveTillChinesePunctuation: boolean;
 }
 
 export const DEFAULT_SETTINGS: ChsPatchSetting = {
   useJieba: false,
   hmm: false,
   dict: "",
-  moveByChineseWords: true,
-  moveTillChinesePunctuation: true,
 };
 
 type SettingKeyWithType<T> = {
@@ -74,22 +70,6 @@ export class ChsPatchSettingTab extends PluginSettingTab {
         );
     }
 
-    if (
-      (this.plugin.settings.useJieba || (window.Intl as any)?.Segmenter) &&
-      app.vault.getConfig("vimMode") == true
-    ) {
-      this.addToggle(containerEl, "moveByChineseWords")
-        .setName("【Vim Mode】使用结巴分词移动光标")
-        .setDesc(
-          "Motion w/e/b/ge 使用结巴分词移动光标 in Vim Normal Mode, 重启Obsidian生效",
-        );
-
-      this.addToggle(containerEl, "moveTillChinesePunctuation")
-        .setName("【Vim Mode】f/t<character> 支持输入英文标点跳转到中文标点")
-        .setDesc(
-          "Motion f/t<character> 支持输入英文标点跳转到中文标点 in Vim Normal Mode, 重启Obsidian生效",
-        );
-    }
   }
 
   addToggle(addTo: HTMLElement, key: SettingKeyWithType<boolean>): Setting {
