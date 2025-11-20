@@ -14,6 +14,7 @@
   "keywords": [],
   "author": "AidenLx",
   "license": "MIT",
+  "packageManager": "npm@8.19.4",
   "devDependencies": {
     "@aidenlx/esbuild-plugin-obsidian": "^0.1.4",
     "@aidenlx/eslint-config": "^2.0.5",
