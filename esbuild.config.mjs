@@ -1,5 +1,6 @@
 import obPlugin from "./scripts/ob.esbuild.mjs";
 import { build } from "esbuild";
+import { mkdir } from "node:fs/promises";
 import { join, resolve } from "path";
 
 const banner = `/*
@@ -10,7 +11,11 @@ if you want to view the source visit the plugins github repository
 
 const isProd = process.env.BUILD === "production";
 
+const outDir = join(resolve(), "build");
+
 try {
+  await mkdir(outDir, { recursive: true });
+
   await build({
     entryPoints: ["src/chsp-main.ts"],
     bundle: true,
@@ -32,7 +37,7 @@ try {
     define: {
       "process.env.NODE_ENV": JSON.stringify(process.env.BUILD),
     },
-    outfile: "main.js",
+    outfile: join(outDir, "main.js"),
     plugins: [obPlugin()],
   });
 } catch (err) {
